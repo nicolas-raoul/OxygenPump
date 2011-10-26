@@ -102,8 +102,10 @@ while (true) {
  * Get the wikicode for every article.
  */
 articlesList.eachLine { article ->
-	getWikicode(article)
-	pause()
+	if( ! article.contains(":")) { // Ignore meta-level articles, for instance Wikitravel:Bad_jokes_and_other_deleted_nonsense/MY_HOUSE
+		getWikicode(article)
+		pause()
+	}
 }
 
 /**
