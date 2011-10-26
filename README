@@ -1,0 +1,16 @@
+Download all articles from Wikitravel in wikicode format.
+
+Be responsible!
+Overloading Wikitravel's servers is in the interest of nobody.
+Don't run this script if a reasonably fresh dump is already available.
+If you run it, make the dump public and be sure to give the link here:
+http://wikitravel.org/en/Wikitravel_talk:How_to_re-use_Wikitravel_guides
+The script takes about 14 days to download all articles.
+
+Whatever you do with the data, conform to the data's license. See:
+http://wikitravel.org/shared/How_to_re-use_Wikitravel_guides
+
+Usage: groovy -classpath lib/nekohtml.jar:lib/xercesImpl.jar oxygenpump.groovy
+Data is stored in the "wikicode" directory.
+
+Author: Nicolas Raoul http://nicolas-raoul.blogspot.com
