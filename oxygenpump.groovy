@@ -28,6 +28,7 @@
  * Author: Nicolas Raoul http://nicolas-raoul.blogspot.com
  */
 
+CLEAN = false
 INITIAL_INDEX_URL = "http://wikitravel.org/en/Special:Allpages/%25s" // First page listed at http://wikitravel.org/en/Special:Allpages
 //INITIAL_INDEX_URL = "unittests/index1.html"
 NEXT_INDEX_PAGE_ANCHOR_LABEL = 'Next page'
@@ -37,11 +38,14 @@ URL_BASE = 'http://wikitravel.org'
  * Cleaning
  */
 def wikicodeDir = new File('wikicode')
-wikicodeDir.deleteDir()
-wikicodeDir.mkdir()
+if (CLEAN) {
+	wikicodeDir.deleteDir()
+	wikicodeDir.mkdir()
+}
 articlesList = new File("articles-list.txt")
-articlesList.write('')
-
+if (CLEAN) {
+	articlesList.write('')
+}
 /**
  * An HTML parser for web pages, that can handle non-valid XML.
  */
@@ -62,48 +66,57 @@ if (debugToFile) {
 /**
  * List all articles.
  */
-def cursorUrl = INITIAL_INDEX_URL
-while (true) {
-	// Load current index page
-	page = parse(cursorUrl)
-	tableElements = page.depthFirst().TABLE.findAll{ it }
+if(CLEAN) {
+	def cursorUrl = INITIAL_INDEX_URL
+	while (true) {
+		// Load current index page
+		page = parse(cursorUrl)
+		tableElements = page.depthFirst().TABLE.findAll{ it }
 
-	// Save each article link
-	tableElement = tableElements[2] // Main part, contains all articles links.
-	aElements = tableElement.depthFirst().A.findAll{ it }
-	aElements.each {
-		href = it.attribute('href')
-		article = href.substring(4)
-		articlesList.append(article + "\n")
-	}
-
-	// Find next index page
-	tableElement = tableElements[1] // Navigation part, contains a link to the next page.
-	aElements = tableElement.depthFirst().A.findAll{ it }
-	nextPageUri = null
-	aElements.each {
-		if(it.value()[0].contains(NEXT_INDEX_PAGE_ANCHOR_LABEL)) {
-			nextPageUri = it.attribute('href')
+		// Save each article link
+		tableElement = tableElements[2] // Main part, contains all articles links.
+		aElements = tableElement.depthFirst().A.findAll{ it }
+		aElements.each {
+			href = it.attribute('href')
+			article = href.substring(4)
+			articlesList.append(article + "\n")
 		}
-	}
 
-	if(nextPageUri == null) {
-		debug('No next page, it was the last index page.')
-		break
-	}
+		// Find next index page
+		tableElement = tableElements[1] // Navigation part, contains a link to the next page.
+		aElements = tableElement.depthFirst().A.findAll{ it }
+		nextPageUri = null
+		aElements.each {
+			if(it.value()[0].contains(NEXT_INDEX_PAGE_ANCHOR_LABEL)) {
+				nextPageUri = it.attribute('href')
+			}
+		}
 
-	def nextPageUrl = URL_BASE + nextPageUri
-	cursorUrl = nextPageUrl
-	pause()
+		if(nextPageUri == null) {
+			debug('No next page, it was the last index page.')
+			break
+		}
+
+		def nextPageUrl = URL_BASE + nextPageUri
+		cursorUrl = nextPageUrl
+		pause()
+	}
 }
-
 
 /**
  * Get the wikicode for every article.
  */
 articlesList.eachLine { article ->
-	if( ! article.contains(":")) { // Ignore meta-level articles, for instance Wikitravel:Bad_jokes_and_other_deleted_nonsense/MY_HOUSE
-		getWikicode(article)
+	if(
+	! article.contains(":") // Ignore meta-level articles, for instance Wikitravel:Bad_jokes_and_other_deleted_nonsense/MY_HOUSE
+	//&& ! article.startsWith("/") // Ignore the single file that starts with a slash
+	) {
+		try {
+			getWikicode(article)
+		}
+		catch(exception) {
+			debug ('!!! EXCEPTION !!! article:' + article + " exception:" + exception)
+		}
 		pause()
 	}
 }
@@ -115,6 +128,7 @@ def getWikicode(article) {
 	debug("Downloading article " + article)
 	node = new XmlSlurper().parse("http://wikitravel.org/wiki/en/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=" + article)
 	def wikicode = node.query.pages.page.revisions.rev.text()
+	article = article.replaceAll("/", "%2F") // Replace slashes with percent encoding, so that it does not mess with the filesystem.
 	new File("wikicode/" + article + ".wikicode").write(wikicode)
 }
 
@@ -122,7 +136,7 @@ def getWikicode(article) {
  * Wait 30 seconds to reduce load on server. See http://wikitravel.org/shared/How_to_re-use_Wikitravel_guides
  */
 def pause() {
-	Thread.sleep(30000)
+	Thread.sleep(3000)
 }
 
 /**
