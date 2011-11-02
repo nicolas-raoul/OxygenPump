@@ -136,7 +136,7 @@ def getWikicode(article) {
  * Wait 30 seconds to reduce load on server. See http://wikitravel.org/shared/How_to_re-use_Wikitravel_guides
  */
 def pause() {
-	Thread.sleep(3000)
+	Thread.sleep(30000)
 }
 
 /**
